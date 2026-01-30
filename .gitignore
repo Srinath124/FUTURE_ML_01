@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter
+.ipynb_checkpoints
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Data
+data/raw/
+# If data/processed is large, uncomment the next line
+# data/processed/
+
+# IDES
+.vscode/
+.idea/
