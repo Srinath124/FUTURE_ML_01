@@ -171,3 +171,210 @@ def create_dashboard(historical, forecast, actuals=None, comparison_df=None, sav
             print(f"Error saving dashboard: {e}")
             
     plt.show()
+
+def plot_forecast_comparison(historical, forecasts_dict, title=None, save_path=None):
+    """
+    Compare multiple forecasts on the same plot.
+    
+    Args:
+        historical: Historical data (pandas Series or array)
+        forecasts_dict: Dictionary of forecasts {name: forecast_data}
+        title: Plot title
+        save_path: Path to save the plot
+    """
+    plt.figure(figsize=(14, 7))
+    
+    # Plot historical data
+    if historical is not None:
+        idx = historical.index if hasattr(historical, 'index') else np.arange(len(historical))
+        plt.plot(idx, historical, label='Historical', color='gray', alpha=0.5, linewidth=2)
+    
+    # Plot each forecast with different colors
+    colors = ['blue', 'red', 'green', 'orange', 'purple', 'brown']
+    for i, (name, forecast) in enumerate(forecasts_dict.items()):
+        if forecast is not None:
+            idx = forecast.index if hasattr(forecast, 'index') else np.arange(len(forecast))
+            color = colors[i % len(colors)]
+            plt.plot(idx, forecast, label=name, color=color, linewidth=2, linestyle='--')
+    
+    if title:
+        plt.title(title, fontsize=16)
+    else:
+        plt.title('Forecast Comparison', fontsize=16)
+        
+    plt.xlabel('Date')
+    plt.ylabel('Sales')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        try:
+            plt.savefig(save_path)
+            print(f"Saved plot to {save_path}")
+        except Exception as e:
+            print(f"Error saving plot: {e}")
+    
+    plt.show()
+
+def plot_seasonal_decomposition(data, period=7, title=None, save_path=None):
+    """
+    Plot seasonal decomposition of time series data.
+    
+    Args:
+        data: Time series data (pandas Series)
+        period: Seasonal period (default 7 for weekly)
+        title: Plot title
+        save_path: Path to save the plot
+    """
+    from statsmodels.tsa.seasonal import seasonal_decompose
+    
+    try:
+        # Perform seasonal decomposition
+        decomposition = seasonal_decompose(data, model='additive', period=period)
+        
+        fig, axes = plt.subplots(4, 1, figsize=(14, 10))
+        
+        # Original
+        axes[0].plot(data.index if hasattr(data, 'index') else range(len(data)), 
+                     data, color='blue')
+        axes[0].set_ylabel('Original')
+        axes[0].grid(True, alpha=0.3)
+        
+        # Trend
+        axes[1].plot(decomposition.trend.index if hasattr(decomposition.trend, 'index') else range(len(decomposition.trend)), 
+                     decomposition.trend, color='green')
+        axes[1].set_ylabel('Trend')
+        axes[1].grid(True, alpha=0.3)
+        
+        # Seasonal
+        axes[2].plot(decomposition.seasonal.index if hasattr(decomposition.seasonal, 'index') else range(len(decomposition.seasonal)), 
+                     decomposition.seasonal, color='orange')
+        axes[2].set_ylabel('Seasonal')
+        axes[2].grid(True, alpha=0.3)
+        
+        # Residual
+        axes[3].plot(decomposition.resid.index if hasattr(decomposition.resid, 'index') else range(len(decomposition.resid)), 
+                     decomposition.resid, color='red')
+        axes[3].set_ylabel('Residual')
+        axes[3].set_xlabel('Date')
+        axes[3].grid(True, alpha=0.3)
+        
+        if title:
+            plt.suptitle(title, fontsize=16, y=0.995)
+        else:
+            plt.suptitle('Seasonal Decomposition', fontsize=16, y=0.995)
+            
+        plt.tight_layout()
+        
+        if save_path:
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            try:
+                plt.savefig(save_path)
+                print(f"Saved plot to {save_path}")
+            except Exception as e:
+                print(f"Error saving plot: {e}")
+        
+        plt.show()
+    except Exception as e:
+        print(f"Error in seasonal decomposition: {e}")
+        print("Make sure data has enough observations for the specified period.")
+
+def plot_category_forecast(data, category_col='Category', sales_col='Sales', date_col='Date', 
+                           top_n=5, title=None, save_path=None):
+    """
+    Plot forecasts by category.
+    
+    Args:
+        data: DataFrame with category and sales data
+        category_col: Name of category column
+        sales_col: Name of sales column
+        date_col: Name of date column
+        top_n: Number of top categories to show
+        title: Plot title
+        save_path: Path to save the plot
+    """
+    try:
+        # Get top N categories by total sales
+        top_categories = data.groupby(category_col)[sales_col].sum().nlargest(top_n).index
+        
+        plt.figure(figsize=(14, 7))
+        
+        for category in top_categories:
+            cat_data = data[data[category_col] == category]
+            if date_col in cat_data.columns:
+                plt.plot(cat_data[date_col], cat_data[sales_col], label=category, linewidth=2)
+            else:
+                plt.plot(cat_data[sales_col], label=category, linewidth=2)
+        
+        if title:
+            plt.title(title, fontsize=16)
+        else:
+            plt.title(f'Top {top_n} Categories - Sales Forecast', fontsize=16)
+            
+        plt.xlabel('Date')
+        plt.ylabel('Sales')
+        plt.legend()
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        
+        if save_path:
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            try:
+                plt.savefig(save_path)
+                print(f"Saved plot to {save_path}")
+            except Exception as e:
+                print(f"Error saving plot: {e}")
+        
+        plt.show()
+    except Exception as e:
+        print(f"Error plotting category forecast: {e}")
+
+def plot_region_forecast(data, region_col='Region', sales_col='Sales', date_col='Date', 
+                        title=None, save_path=None):
+    """
+    Plot forecasts by region.
+    
+    Args:
+        data: DataFrame with region and sales data
+        region_col: Name of region column
+        sales_col: Name of sales column
+        date_col: Name of date column
+        title: Plot title
+        save_path: Path to save the plot
+    """
+    try:
+        regions = data[region_col].unique()
+        
+        plt.figure(figsize=(14, 7))
+        
+        for region in regions:
+            region_data = data[data[region_col] == region]
+            if date_col in region_data.columns:
+                plt.plot(region_data[date_col], region_data[sales_col], label=region, linewidth=2)
+            else:
+                plt.plot(region_data[sales_col], label=region, linewidth=2)
+        
+        if title:
+            plt.title(title, fontsize=16)
+        else:
+            plt.title('Regional Sales Forecast', fontsize=16)
+            
+        plt.xlabel('Date')
+        plt.ylabel('Sales')
+        plt.legend()
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        
+        if save_path:
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            try:
+                plt.savefig(save_path)
+                print(f"Saved plot to {save_path}")
+            except Exception as e:
+                print(f"Error saving plot: {e}")
+        
+        plt.show()
+    except Exception as e:
+        print(f"Error plotting region forecast: {e}")
